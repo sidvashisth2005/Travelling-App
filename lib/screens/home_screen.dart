@@ -10,16 +10,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Destination> popularDestinations = const [
-    Destination(city: 'Paris', country: 'France', imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760c0341?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
-    Destination(city: 'Kyoto', country: 'Japan', imageUrl: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
-    Destination(city: 'Rome', country: 'Italy', imageUrl: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1396&q=80'),
-    Destination(city: 'Santorini', country: 'Greece', imageUrl: 'https://images.unsplash.com/photo-1533105079780-52b9be4ac20d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
-  ];
+  List<Place> popularDestinations = [];
+  bool _isPopularLoading = true;
 
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   List<Place> _places = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPopularDestinations();
+  }
+
+  Future<void> _fetchPopularDestinations() async {
+    setState(() => _isPopularLoading = true);
+    final places = await PlacesService.fetchPopularIndianDestinations();
+    setState(() {
+      popularDestinations = places;
+      _isPopularLoading = false;
+    });
+  }
 
   Future<void> _searchPlaces() async {
     setState(() => _isLoading = true);
@@ -65,13 +76,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
             _buildSectionHeader(context, 'Popular Destinations'),
-            SizedBox(
-              height: 220,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: popularDestinations.length,
-                itemBuilder: (context, index) => DestinationCard(destination: popularDestinations[index]),
+            if (_isPopularLoading)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              )),
+            if (!_isPopularLoading && popularDestinations.isNotEmpty)
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: popularDestinations.length,
+                  itemBuilder: (context, index) {
+                    final place = popularDestinations[index];
+                    return Container(
+                      width: 160,
+                      margin: const EdgeInsets.only(right: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                place.imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                                errorBuilder: (_, __, ___) => const Icon(Icons.error, color: Colors.red),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(place.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(place.description, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            if (!_isPopularLoading && popularDestinations.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('No popular destinations found.', style: TextStyle(fontSize: 16)),
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20.0, bottom: 8),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh popular destinations',
+                  onPressed: _fetchPopularDestinations,
+                ),
               ),
             ),
             if (_isLoading)

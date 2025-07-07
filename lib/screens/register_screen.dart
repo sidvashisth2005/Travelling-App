@@ -19,15 +19,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() async {
     if (nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter your name")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Please enter your name.",
+            style: TextStyle(fontSize: 14),
+          ),
+          duration: Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: Colors.grey,
+          elevation: 6,
+        ),
+      );
       return;
     }
     if (passwordController.text != confirmController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Passwords do not match.",
+            style: TextStyle(fontSize: 14),
+          ),
+          duration: Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: Colors.grey,
+          elevation: 6,
+        ),
+      );
       return;
     }
     if (!termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please accept the Terms and Conditions")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Please accept the Terms and Conditions.",
+            style: TextStyle(fontSize: 14),
+          ),
+          duration: Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          backgroundColor: Colors.grey,
+          elevation: 6,
+        ),
+      );
       return;
     }
     setState(() => isLoading = true);
@@ -40,7 +79,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
+          SnackBar(
+            content: Text(
+              'Registration failed: $error',
+              style: const TextStyle(fontSize: 14),
+            ),
+            duration: const Duration(milliseconds: 1500),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            backgroundColor: Colors.grey[900],
+            elevation: 6,
+          ),
         );
       }
     }

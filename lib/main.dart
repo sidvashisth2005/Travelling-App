@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'screens/main_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -81,7 +83,21 @@ class TravelApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginScreen(),
+      home: const RootPage(),
     );
+  }
+}
+
+class RootPage extends StatelessWidget {
+  const RootPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return const MainPage();
+    } else {
+      return const LoginScreen();
+    }
   }
 }

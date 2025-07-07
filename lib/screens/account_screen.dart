@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../widgets/animated_fade_slide.dart';
 import 'login_screen.dart';
+import '../services/auth_service.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -21,7 +22,31 @@ class AccountScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false),
+            onPressed: () async {
+              await AuthService.signOut();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'Logged out successfully.',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                    duration: Duration(milliseconds: 1500),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    backgroundColor: Colors.grey[900],
+                    elevation: 6,
+                  ),
+                );
+                await Future.delayed(const Duration(milliseconds: 1500));
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
           ),

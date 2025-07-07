@@ -30,7 +30,20 @@ class LoginScreen extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
+            SnackBar(
+              content: Text(
+                'Login failed: $error',
+                style: const TextStyle(fontSize: 14),
+              ),
+              duration: const Duration(milliseconds: 1500),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              backgroundColor: Colors.grey[900],
+              elevation: 6,
+            ),
           );
         }
       }
