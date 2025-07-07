@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+// This service is ONLY for places/POIs (Explore page), NOT for hotels.
+// Do NOT use this service to fetch hotels or call /hotels/list endpoint.
+// If you need hotels, use hotel_service.dart instead.
+
 class Place {
   final String name;
   final String description;

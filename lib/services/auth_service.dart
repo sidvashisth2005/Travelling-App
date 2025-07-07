@@ -15,12 +15,14 @@ class AuthService {
     }
   }
 
-  static Future<String?> register(String email, String password) async {
+  static Future<String?> register(String name, String email, String password) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
+      await cred.user?.updateDisplayName(name.trim());
+      await cred.user?.reload();
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message ?? 'Registration failed';

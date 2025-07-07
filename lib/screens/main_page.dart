@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'hotels_screen.dart';
 import 'account_screen.dart';
+import 'chatbot_screen.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -16,6 +17,7 @@ class _MainPageState extends State<MainPage> {
   static const List<Widget> _pages = [
     HomeScreen(),
     HotelsScreen(),
+    ChatbotScreen(),
     AccountScreen(),
   ];
 
@@ -46,6 +48,7 @@ class _MainPageState extends State<MainPage> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Explore'),
             NavigationDestination(icon: Icon(Icons.hotel_outlined), selectedIcon: Icon(Icons.hotel), label: 'Hotels'),
+            NavigationDestination(icon: Icon(Icons.chat_bubble_outline), selectedIcon: Icon(Icons.chat_bubble), label: 'Chatbot'),
             NavigationDestination(icon: Icon(Icons.account_circle_outlined), selectedIcon: Icon(Icons.account_circle), label: 'Account'),
           ],
         ),

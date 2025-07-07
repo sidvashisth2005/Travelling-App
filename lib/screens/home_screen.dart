@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../services/places_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,7 +55,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hi, John', style: theme.textTheme.bodyMedium),
+                  Builder(
+                    builder: (context) {
+                      final user = FirebaseAuth.instance.currentUser;
+                      final name = user?.displayName ?? 'Traveler';
+                      return Text('Hi, $name', style: theme.textTheme.bodyMedium);
+                    },
+                  ),
                   Text('Where to next?', style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 20),
                   Row(
