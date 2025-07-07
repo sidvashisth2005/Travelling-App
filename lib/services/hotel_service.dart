@@ -18,7 +18,7 @@ class Hotel {
 
 class HotelService {
   static const host = 'travel-advisor.p.rapidapi.com';
-  static const apiKey = '<YOUR_RAPIDAPI_KEY>';
+  static const apiKey = 'edf817298dmsh1546aaf8d19ca75p1da5a5jsn7d6b3c2cb31d';
 
   Future<String?> getLocationId(String city) async {
     final uri = Uri.https(host, '/locations/search', {

@@ -1,15 +1,34 @@
 import 'package:flutter/material.dart';
 import '../models/destination.dart';
+import '../services/places_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final List<Destination> popularDestinations = const [
     Destination(city: 'Paris', country: 'France', imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760c0341?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
     Destination(city: 'Kyoto', country: 'Japan', imageUrl: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
     Destination(city: 'Rome', country: 'Italy', imageUrl: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1396&q=80'),
     Destination(city: 'Santorini', country: 'Greece', imageUrl: 'https://images.unsplash.com/photo-1533105079780-52b9be4ac20d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80'),
   ];
+
+  final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = false;
+  List<Place> _places = [];
+
+  Future<void> _searchPlaces() async {
+    setState(() => _isLoading = true);
+    final places = await PlacesService.fetchTopPlaces(_searchController.text);
+    setState(() {
+      _places = places;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +46,20 @@ class HomeScreen extends StatelessWidget {
                   Text('Hi, John', style: theme.textTheme.bodyMedium),
                   Text('Where to next?', style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 20),
-                  const TextField(decoration: InputDecoration(hintText: 'Search for a city...', prefixIcon: Icon(Icons.search))),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(hintText: 'Search for a city...', prefixIcon: Icon(Icons.search)),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: _searchPlaces,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -42,6 +74,25 @@ class HomeScreen extends StatelessWidget {
                 itemBuilder: (context, index) => DestinationCard(destination: popularDestinations[index]),
               ),
             ),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator()),
+            if (_places.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(context, 'Top Places'),
+                    ..._places.map((place) => ListTile(
+                          leading: place.imageUrl.isNotEmpty
+                              ? Image.network(place.imageUrl, width: 50, height: 50, fit: BoxFit.cover)
+                              : const Icon(Icons.place),
+                          title: Text(place.name),
+                          subtitle: Text(place.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        )),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

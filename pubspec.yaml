@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_dotenv: ^5.2.1
   # Firebase Core + Auth
   firebase_core: ^2.24.2
   firebase_auth: ^4.17.4
@@ -24,7 +25,6 @@ dependencies:
   provider: ^6.1.2
   flutter_svg: ^2.0.10
   google_fonts: ^6.2.1
-  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
