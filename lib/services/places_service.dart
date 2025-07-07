@@ -106,6 +106,7 @@ class PlacesService {
       'Kamrup Metropolitan', 'Karbi Anglong', 'Kokrajhar', 'Lakhimpur',
       'Majuli', 'Morigaon', 'Nagaon', 'Nalbari', 'Sivasagar', 'Sonitpur',
       'South Salmara', 'Tinsukia',
+      
     ];
     cityNames.shuffle();
     final selectedCities = cityNames.take(8).toList(); // Query more to filter for images
