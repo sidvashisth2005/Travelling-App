@@ -83,12 +83,49 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSectionHeader(context, 'Top Places'),
-                    ..._places.map((place) => ListTile(
-                          leading: place.imageUrl.isNotEmpty
-                              ? Image.network(place.imageUrl, width: 50, height: 50, fit: BoxFit.cover)
-                              : const Icon(Icons.place),
-                          title: Text(place.name),
-                          subtitle: Text(place.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ..._places.map((place) => Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            leading: place.imageUrl.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      place.imageUrl,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.place, size: 32, color: Colors.deepPurpleAccent),
+                                  ),
+                            title: Text(
+                              place.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            subtitle: place.description.isNotEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      place.description,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                  )
+                                : null,
+                          ),
                         )),
                   ],
                 ),
