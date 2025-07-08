@@ -6,6 +6,7 @@ import 'services/places_service.dart';
 import 'services/hotel_service.dart';
 import 'screens/main_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'services/ai_chat_service.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -14,10 +15,21 @@ Future<void> main() async {
   await Firebase.initializeApp();
   final doc = await FirebaseFirestore.instance.collection('config').doc('api_keys').get();
   final apiKey = doc['travel_advisor_api_key'] as String?;
+  final hfApiKey = doc['huggingface_api_key'] as String?;
+  final hfModelUrl = doc['huggingface_model_url'] as String?;
+  final travelAdvisorHost = doc['travel_advisor_host'] as String?;
+  final travelAdvisorBaseUrl = doc['travel_advisor_base_url'] as String?;
   if (apiKey != null && apiKey.isNotEmpty) {
     PlacesService.setApiKey(apiKey);
     HotelService.setApiKey(apiKey);
   }
+  if (hfApiKey != null && hfApiKey.isNotEmpty) {
+    AIChatService.setApiKey(hfApiKey);
+  }
+  if (hfModelUrl != null && hfModelUrl.isNotEmpty) {
+    AIChatService.setModelUrl(hfModelUrl);
+  }
+  // Optionally, set host/baseUrl for other services if you add setters
   runApp(const TravelApp());
 }
 

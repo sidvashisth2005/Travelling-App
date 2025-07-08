@@ -2,44 +2,39 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AIChatService {
-  static const String _apiKey = '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';
-  static const String _apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  static String? _apiKey;
+  static String? _modelUrl;
+  static void setApiKey(String key) => _apiKey = key;
+  static void setModelUrl(String url) => _modelUrl = url.trim();
+  static String get apiKey => _apiKey ?? '';
+  static String get modelUrl => _modelUrl ?? '';
 
   static Future<String?> sendMessage(String message) async {
     try {
       final response = await http.post(
-        Uri.parse(_apiUrl),
+        Uri.parse(modelUrl),
         headers: {
+          'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
-          // Optionally add these for OpenRouter rankings:
-          // 'HTTP-Referer': '<YOUR_SITE_URL>',
-          // 'X-Title': '<YOUR_SITE_NAME>',
         },
-        body: jsonEncode({
-          'model': 'deepseek/deepseek-r1-0528',
-          'messages': [
-            {'role': 'user', 'content': message},
-          ],
-          'max_tokens': 512,
-        }),
+        body: jsonEncode({'inputs': message}),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'] as String?;
+        if (data is Map && data.containsKey('generated_text')) {
+          return data['generated_text'];
+        } else if (data is List && data.isNotEmpty && data[0]['generated_text'] != null) {
+          return data[0]['generated_text'];
+        }
+        return data.toString();
       } else {
-        String errorMsg = 'API error: ${response.statusCode}';
-        try {
-          final data = jsonDecode(response.body);
-          if (data is Map && data['error'] != null) {
-            errorMsg = data['error']['message'] ?? errorMsg;
-          }
-        } catch (_) {}
-        print('OpenRouter API error: ${response.statusCode} ${response.body}');
-        return errorMsg;
+        print('Hugging Face API error: ${response.statusCode} ${response.body}');
+        if (response.headers['content-type']?.contains('text/html') ?? false) {
+          return 'Error: Received HTML response. Check your API key and model URL.';
+        }
+        return 'Error: ${response.body}';
       }
     } catch (e) {
-      print('OpenRouter API exception: $e');
       return 'An error occurred: $e';
     }
   }
