@@ -1,6 +1,6 @@
 # Travel App
 
-A modern Flutter travel application for exploring places, viewing details, searching for hotels, and navigating with beautiful map integration. Built with Firebase authentication, TripAdvisor and OpenStreetMap APIs, and a sleek Material 3 dark theme.
+A modern Flutter travel application for exploring places, viewing details, searching for hotels, chatting with AI, and navigating with beautiful map integration. Built with Firebase authentication, dynamic API config, TripAdvisor and OpenStreetMap APIs, Hugging Face AI chatbot, and a sleek Material 3 dark theme.
 
 ---
 
@@ -11,6 +11,7 @@ This app lets users:
 - See places and hotels on interactive maps
 - Get directions to any place or hotel using Google Maps
 - Register and log in securely with Firebase Auth
+- Chat with an AI assistant (Hugging Face Inference API)
 
 ---
 
@@ -35,10 +36,17 @@ This app lets users:
     - **Get Directions** button: opens Google Maps for navigation
 
 ### 4. **Hotels**
-- Search for hotels in a city (TripAdvisor API)
-- (Planned) Show hotels on a map, supplement with OSM data, and add "Nearby Landmark" for hotels
+- Search for hotels in a city (TripAdvisor API, with OSM fallback)
+- See hotels on a map, with images and address
+- "Nearby Landmark" for hotels (via OSM)
 
-### 5. **Modern UI/UX**
+### 5. **AI Chatbot**
+- Chat with an AI assistant powered by Hugging Face Inference API
+- Model and API key are fetched dynamically from Firebase
+- Copy-to-clipboard: Long-press any chat message to copy
+- Robust error handling for API/network issues
+
+### 6. **Modern UI/UX**
 - Material 3, dark theme, purple primary color, rounded cards and buttons
 - Smooth transitions and consistent padding
 
@@ -48,8 +56,8 @@ This app lets users:
 ```
 lib/
   main.dart                # App entry point and theme
-  screens/                 # All UI screens (home, details, hotels, account, etc.)
-  services/                # API and data services (places, hotels, auth)
+  screens/                 # All UI screens (home, details, hotels, chatbot, etc.)
+  services/                # API and data services (places, hotels, auth, ai_chat)
   widgets/                 # Reusable UI components
   models/                  # Data models (Place, Hotel, etc.)
 ```
@@ -67,23 +75,29 @@ lib/
    ```bash
    flutter pub get
    ```
-3. **Run the app:**
+3. **Set up Firebase:**
+   - Add your Firebase config files for Android/iOS if using authentication
+   - In Firestore, create a `config` collection and an `api_keys` document with these fields:
+     - `travel_advisor_api_key`: Your TripAdvisor RapidAPI key
+     - `travel_advisor_host`: `travel-advisor.p.rapidapi.com`
+     - `travel_advisor_base_url`: `https://travel-advisor.p.rapidapi.com`
+     - `huggingface_api_key`: Your Hugging Face Inference API key (with Inference permission)
+     - `huggingface_model_url`: e.g. `https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium`
+
+4. **Run the app:**
    ```bash
    flutter run
    ```
 
 ---
 
-## 🔑 API Keys & Environment Variables
-- **TripAdvisor RapidAPI:**
-  - Used for places and hotels data
-  - Get your API key from [RapidAPI]
-  - Add your key in `lib/services/places_service.dart` and `lib/services/hotel_service.dart`
-- **OpenStreetMap Nominatim:**
-  - Used for reverse geocoding and landmarks
-  - No API key required (free usage, but respect rate limits)
-- **Firebase:**
-  - Add your Firebase config files for Android/iOS if using authentication
+## 🔑 API Keys & Dynamic Config
+- **All API keys, hosts, and model URLs are stored in Firebase Firestore** under `config/api_keys`.
+- The app fetches these at startup, so you can update keys or endpoints without redeploying.
+- **TripAdvisor RapidAPI:** Used for places and hotels data
+- **OpenStreetMap Nominatim:** Used for reverse geocoding and landmarks (no key required)
+- **Hugging Face Inference API:** Used for AI chatbot (key and model URL from Firestore)
+- **Firebase:** Used for authentication and config storage
 
 ---
 
@@ -94,12 +108,21 @@ lib/
 
 ---
 
+## 🤖 AI Chatbot
+- Powered by Hugging Face Inference API (e.g., DialoGPT, Blenderbot)
+- Model and API key are fetched from Firestore
+- Copy-to-clipboard: Long-press any chat message to copy
+- Handles API/network errors gracefully
+
+---
+
 ## 🛠️ Dependencies
 - [flutter_map](https://pub.dev/packages/flutter_map)
 - [latlong2](https://pub.dev/packages/latlong2)
 - [url_launcher](https://pub.dev/packages/url_launcher)
 - [http](https://pub.dev/packages/http)
 - [firebase_core](https://pub.dev/packages/firebase_core), [firebase_auth](https://pub.dev/packages/firebase_auth)
+- [cloud_firestore](https://pub.dev/packages/cloud_firestore)
 
 ---
 
@@ -113,8 +136,21 @@ lib/
 ## 🧰 Troubleshooting
 - **API errors:** Check your API keys and network connection
 - **Map not loading:** Ensure you have internet access and the correct dependencies
-- **Firebase issues:** Make sure your config files are present and correct
+- **Firebase issues:** Make sure your config files and Firestore rules are correct
 - **Rate limits:** Nominatim and TripAdvisor APIs have rate limits; use responsibly
+- **Firestore permissions:**
+  - For development, use:
+    ```
+    service cloud.firestore {
+      match /databases/{database}/documents {
+        match /config/api_keys {
+          allow read: if true;
+          allow write: if false;
+        }
+      }
+    }
+    ```
+  - For production, restrict read access as needed
 
 ---
 
@@ -124,7 +160,7 @@ lib/
 ---
 
 ## 📄 License
-*All license reserved.
+*All rights reserved.*
 
 ---
 
