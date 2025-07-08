@@ -60,7 +60,7 @@ lib/
 
 1. **Clone the repository:**
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/sidvashisth2005/Travelling-App.git
    cd travel_app
    ```
 2. **Install dependencies:**
@@ -77,7 +77,7 @@ lib/
 ## 🔑 API Keys & Environment Variables
 - **TripAdvisor RapidAPI:**
   - Used for places and hotels data
-  - Get your API key from [RapidAPI](https://rapidapi.com/apidojo/api/travel-advisor/)
+  - Get your API key from [RapidAPI]
   - Add your key in `lib/services/places_service.dart` and `lib/services/hotel_service.dart`
 - **OpenStreetMap Nominatim:**
   - Used for reverse geocoding and landmarks
@@ -119,12 +119,12 @@ lib/
 ---
 
 ## 📸 Screenshots
-*Add screenshots here to showcase the UI and features!*
+*Screenshots here to showcase the UI and features!*
 
 ---
 
 ## 📄 License
-*Specify your license here (MIT, Apache, etc.)*
+*All license reserved.
 
 ---
 
