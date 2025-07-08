@@ -25,7 +25,9 @@ class Place {
 
 class PlacesService {
   static const String host = 'travel-advisor.p.rapidapi.com';
-  static const String apiKey = 'cdc3752538mshc4fb1defcf687cbp1cb762jsna80c7989bb21';
+  static String? _apiKey;
+  static setApiKey(String key) => _apiKey = key;
+  static String get apiKey => _apiKey ?? '';
 
   static Future<String?> getLocationId(String city) async {
     final uri = Uri.https(host, '/locations/search', {

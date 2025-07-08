@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'services/places_service.dart';
+import 'services/hotel_service.dart';
 import 'screens/main_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,6 +12,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
   await Firebase.initializeApp();
+  final doc = await FirebaseFirestore.instance.collection('config').doc('api_keys').get();
+  final apiKey = doc['travel_advisor_api_key'] as String?;
+  if (apiKey != null && apiKey.isNotEmpty) {
+    PlacesService.setApiKey(apiKey);
+    HotelService.setApiKey(apiKey);
+  }
   runApp(const TravelApp());
 }
 
