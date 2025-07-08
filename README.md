@@ -129,5 +129,5 @@ lib/
 ---
 
 ## 📬 Contact
-- Project maintained by: *Your Name or Organization*
-- For questions, open an issue or contact: *your@email.com*
+- Project maintained by: *Siddhant Vashisth*
+- For questions, open an issue or contact: *siddhantvashisth05@email.com*
