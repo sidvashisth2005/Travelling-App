@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../services/places_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'place_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,28 +98,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: popularDestinations.length,
                   itemBuilder: (context, index) {
                     final place = popularDestinations[index];
-                    return Container(
-                      width: 160,
-                      margin: const EdgeInsets.only(right: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                place.imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
-                                errorBuilder: (_, __, ___) => const Icon(Icons.error, color: Colors.red),
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PlaceDetailsScreen(place: place),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 160,
+                        margin: const EdgeInsets.only(right: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  place.imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.error, color: Colors.red),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(place.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text(place.description, style: Theme.of(context).textTheme.bodySmall),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(place.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(place.description, style: Theme.of(context).textTheme.bodySmall),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -191,6 +202,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   )
                                 : null,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PlaceDetailsScreen(place: place),
+                                ),
+                              );
+                            },
                           ),
                         )),
                   ],
