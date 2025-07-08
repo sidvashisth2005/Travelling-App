@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 class Hotel {
   final String name, address, price, imageUrl;
   final double rating;
+  final double? latitude;
+  final double? longitude;
 
   Hotel({
     required this.name,
@@ -17,18 +19,19 @@ class Hotel {
     required this.price,
     required this.imageUrl,
     required this.rating,
+    this.latitude,
+    this.longitude,
   });
 }
 
 class HotelService {
-  static const host = 'tripadvisor-com1.p.rapidapi.com';
+  static const host = 'travel-advisor.p.rapidapi.com';
   static const apiKey = 'edf817298dmsh1546aaf8d19ca75p1da5a5jsn7d6b3c2cb31d';
 
   Future<String?> getLocationId(String city) async {
-    print('Fetching location ID for: $city');
     final uri = Uri.https(host, '/locations/search', {
       'query': city,
-      'limit': '5',
+      'limit': '3',
       'offset': '0',
       'units': 'km',
       'location_id': '1',
@@ -40,94 +43,90 @@ class HotelService {
       'x-rapidapi-key': apiKey,
       'x-rapidapi-host': host,
     });
-    print('Location search response: [33m${res.statusCode} ${res.body}[0m');
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body)['data'] as List;
       if (data.isNotEmpty) {
-        final city = data.firstWhere(
-          (item) => item['result_type'] == 'city' || item['result_type'] == 'geos',
-          orElse: () => null,
-        );
-        if (city != null) {
-          return city['result_object']['location_id']?.toString();
-        }
-        // Fallback: use first result
         return data[0]['result_object']['location_id']?.toString();
       }
     }
     return null;
   }
 
-  Future<String?> getLocationIdByCoords(double lat, double lng) async {
-    print('Fetching location ID for coordinates: $lat, $lng');
-    final uri = Uri.https(host, '/locations/search', {
-      'latitude': lat.toString(),
-      'longitude': lng.toString(),
-      'limit': '5',
-      'offset': '0',
-      'units': 'km',
-      'location_id': '1',
-      'currency': 'USD',
-      'sort': 'relevance',
-      'lang': 'en_US',
-    });
-    final res = await http.get(uri, headers: {
-      'x-rapidapi-key': apiKey,
-      'x-rapidapi-host': host,
-    });
-    print('Location search by coords response: [33m${res.statusCode} ${res.body}[0m');
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body)['data'] as List;
-      if (data.isNotEmpty) {
-        final city = data.firstWhere(
-          (item) => item['result_type'] == 'city' || item['result_type'] == 'geos',
-          orElse: () => null,
-        );
-        if (city != null) {
-          return city['result_object']['location_id']?.toString();
-        }
-        // Fallback: use first result
-        return data[0]['result_object']['location_id']?.toString();
+  Future<List<Hotel>> fetchHotels(String city) async {
+    // 1. Try Travel API
+    final locationId = await getLocationId(city);
+    if (locationId != null) {
+      final uri = Uri.https(host, '/hotels/list', {
+        'location_id': locationId,
+        'currency': 'USD',
+        'limit': '10',
+        'adults': '1',
+        'rooms': '1',
+        'offset': '0',
+        'sort': 'recommended',
+        'lang': 'en_US',
+      });
+      final res = await http.get(uri, headers: {
+        'x-rapidapi-key': apiKey,
+        'x-rapidapi-host': host,
+      });
+      if (res.statusCode == 200) {
+        final arr = jsonDecode(res.body)['data'] as List;
+        final hotels = arr.map((h) {
+          final r = h['hotel'] ?? h['result_object'];
+          final name = r['name'] ?? '';
+          final address = r['address'] ?? '';
+          final photo = r['photo']?['images']?['medium']?['url'] ?? '';
+          final lat = r['latitude'] != null ? double.tryParse(r['latitude'].toString()) : null;
+          final lon = r['longitude'] != null ? double.tryParse(r['longitude'].toString()) : null;
+          return Hotel(
+            name: name,
+            address: address,
+            price: h['price']?['current_prices'] ?? 'N/A',
+            imageUrl: photo,
+            rating: (h['rating'] ?? 0).toDouble(),
+            latitude: lat,
+            longitude: lon,
+          );
+        }).where((hotel) => hotel.name.isNotEmpty && hotel.address.isNotEmpty).toList();
+        if (hotels.isNotEmpty) return hotels;
       }
     }
-    return null;
-  }
-
-  Future<List<Hotel>> fetchHotels(String locationId) async {
-    print('Fetching hotels for locationId: $locationId');
-    final uri = Uri.https(host, '/hotels/list', {
-      'location_id': locationId,
-      'currency': 'USD',
-      'limit': '10',
-      'adults': '1',
-      'rooms': '1',
-      'offset': '0',
-      'sort': 'recommended',
-      'lang': 'en_US',
-    });
-    final res = await http.get(uri, headers: {
-      'x-rapidapi-key': apiKey,
-      'x-rapidapi-host': host,
-    });
-    print('Hotels fetch response: ${res.statusCode} ${res.body}');
-    if (res.statusCode == 200) {
-      final arr = jsonDecode(res.body)['data'] as List;
-      return arr.map((h) {
-        final r = h['hotel'] ?? h['result_object'];
-        final name = r['name'] ?? '';
-        final address = r['address'] ?? '';
-        final photo = r['photo']?['images']?['medium']?['url'] ?? '';
-        return Hotel(
-          name: name,
-          address: address,
-          price: h['price']?['current_prices'] ?? 'N/A',
-          imageUrl: photo,
-          rating: (h['rating'] ?? 0).toDouble(),
-        );
-      }).where((hotel) => hotel.name.isNotEmpty && hotel.address.isNotEmpty).toList();
-    } else {
-      throw Exception('Hotels fetch failed (status: [31m${res.statusCode}[0m)');
+    // 2. Fallback: OSM Nominatim (hotels, hostels, guest houses, motels)
+    final types = ['hotel', 'hostel', 'guest_house', 'motel'];
+    final List<Hotel> allResults = [];
+    for (final type in types) {
+      final osmUri = Uri.parse('https://nominatim.openstreetmap.org/search?city=${Uri.encodeComponent(city)}&format=json&extratags=1&addressdetails=1&limit=15&tourism=$type');
+      final osmRes = await http.get(osmUri, headers: {
+        'User-Agent': 'travel_app/1.0 (your@email.com)',
+      });
+      if (osmRes.statusCode == 200) {
+        final arr = jsonDecode(osmRes.body) as List;
+        for (final h in arr) {
+          final name = h['namedetails']?['name'] ?? h['display_name']?.split(',')?.first ?? 'Accommodation';
+          final address = h['display_name'] ?? '';
+          final lat = h['lat'] != null ? double.tryParse(h['lat'].toString()) : null;
+          final lon = h['lon'] != null ? double.tryParse(h['lon'].toString()) : null;
+          String imageUrl = '';
+          if (h['extratags'] != null && h['extratags']['image'] != null) {
+            imageUrl = h['extratags']['image'];
+          }
+          // Deduplicate by lat/lon
+          if (lat != null && lon != null && !allResults.any((hotel) => hotel.latitude == lat && hotel.longitude == lon)) {
+            allResults.add(Hotel(
+              name: name,
+              address: address,
+              price: 'N/A',
+              imageUrl: imageUrl,
+              rating: 0,
+              latitude: lat,
+              longitude: lon,
+            ));
+          }
+        }
+      }
     }
+    return allResults;
   }
 
   Future<Map<String, String?>> getLocationInfoByCoords(double lat, double lng) async {
