@@ -9,6 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'services/ai_chat_service.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
@@ -41,6 +43,7 @@ class TravelApp extends StatelessWidget {
     return MaterialApp(
       title: 'Travel App',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

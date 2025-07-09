@@ -3,9 +3,25 @@ import '../models/destination.dart';
 import '../services/places_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'place_details_screen.dart';
+import 'all_destinations_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Set<String> wishlist;
+  final List<Place> scheduledTrips;
+  final void Function(String, bool) onWishlistChanged;
+  final void Function(Place) onScheduleTrip;
+  final void Function(List<Place>) registerPlaces;
+  final String displayName;
+  const HomeScreen({
+    super.key,
+    required this.wishlist,
+    required this.scheduledTrips,
+    required this.onWishlistChanged,
+    required this.onScheduleTrip,
+    required this.registerPlaces,
+    required this.displayName,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -28,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchPopularDestinations() async {
     setState(() => _isPopularLoading = true);
     final places = await PlacesService.fetchPopularIndianDestinations();
+    widget.registerPlaces(places);
     setState(() {
       popularDestinations = places;
       _isPopularLoading = false;
@@ -37,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _searchPlaces() async {
     setState(() => _isLoading = true);
     final places = await PlacesService.fetchTopPlaces(_searchController.text);
+    widget.registerPlaces(places);
     setState(() {
       _places = places;
       _isLoading = false;
@@ -58,9 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Builder(
                     builder: (context) {
-                      final user = FirebaseAuth.instance.currentUser;
-                      final name = user?.displayName ?? 'Traveler';
-                      return Text('Hi, $name', style: theme.textTheme.bodyMedium);
+                      return Text('Hi, ${widget.displayName}', style: theme.textTheme.bodyMedium);
                     },
                   ),
                   Text('Where to next?', style: theme.textTheme.headlineMedium),
@@ -85,10 +101,26 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 30),
             _buildSectionHeader(context, 'Popular Destinations'),
             if (_isPopularLoading)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(20),
-                child: CircularProgressIndicator(),
-              )),
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: 4,
+                  itemBuilder: (context, index) => Shimmer.fromColors(
+                    baseColor: Colors.grey[800]!,
+                    highlightColor: Colors.grey[600]!,
+                    child: Container(
+                      width: 160,
+                      margin: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (!_isPopularLoading && popularDestinations.isNotEmpty)
               SizedBox(
                 height: 220,
@@ -98,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: popularDestinations.length,
                   itemBuilder: (context, index) {
                     final place = popularDestinations[index];
+                    final isWishlisted = widget.wishlist.contains(place.name);
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -107,7 +140,99 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       },
-                      child: Container(
+                      onLongPress: () async {
+                        final result = await showModalBottomSheet<String>(
+                          context: context,
+                          builder: (context) => SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.event_available, color: Colors.blue, semanticLabel: 'Schedule Trip'),
+                                  title: const Text('Schedule Trip', style: TextStyle(color: Colors.blue)),
+                                  onTap: () => Navigator.pop(context, 'schedule'),
+                                ),
+                                if (isWishlisted)
+                                  ListTile(
+                                    leading: const Icon(Icons.delete, color: Colors.red, semanticLabel: 'Remove from wishlist'),
+                                    title: const Text('Remove from wishlist', style: TextStyle(color: Colors.red)),
+                                    onTap: () => Navigator.pop(context, 'remove'),
+                                  ),
+                                ListTile(
+                                  leading: const Icon(Icons.close, semanticLabel: 'Cancel'),
+                                  title: const Text('Cancel'),
+                                  onTap: () => Navigator.pop(context, null),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                        if (result == 'schedule') {
+                          widget.onScheduleTrip(place);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.event_available, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Text('Scheduled trip to ${place.name}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                  ],
+                                ),
+                                backgroundColor: Colors.grey[900],
+                                duration: const Duration(seconds: 3),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                elevation: 6,
+                              ),
+                            );
+                          }
+                        } else if (result == 'remove') {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Remove from Wishlist?'),
+                              content: Text('Are you sure you want to remove ${place.name} from your wishlist?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            widget.onWishlistChanged(place.name, false);
+                            if (context.mounted) {
+                              final snackBar = SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.favorite_border, color: Colors.red),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text('${place.name} removed from wishlist')),
+                                  ],
+                                ),
+                                backgroundColor: Colors.grey[900],
+                                action: SnackBarAction(
+                                  label: 'Undo',
+                                  textColor: Colors.red,
+                                  onPressed: () {
+                                    widget.onWishlistChanged(place.name, true);
+                                  },
+                                ),
+                                duration: const Duration(seconds: 4),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                elevation: 6,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                            }
+                          }
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
                         width: 160,
                         margin: const EdgeInsets.only(right: 16),
                         child: Column(
@@ -130,6 +255,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(place.description, style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.onWishlistChanged(place.name, !isWishlisted);
+                              },
+                              child: Icon(
+                                isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                color: isWishlisted ? Colors.red : Colors.white,
+                                size: 28,
+                                semanticLabel: isWishlisted ? 'Remove from wishlist' : 'Add to wishlist',
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -152,7 +294,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (_isLoading)
-              const Center(child: CircularProgressIndicator()),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(context, 'Top Places'),
+                    ...List.generate(4, (index) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey[800]!,
+                        highlightColor: Colors.grey[600]!,
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: Container(
+                            height: 80,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[900],
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )),
+                  ],
+                ),
+              ),
             if (_places.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -160,13 +332,74 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSectionHeader(context, 'Top Places'),
-                    ..._places.map((place) => Card(
+                    ..._places.map((place) {
+                      final isWishlisted = widget.wishlist.contains(place.name);
+                      return GestureDetector(
+                        onLongPress: () async {
+                          final result = await showModalBottomSheet<String>(
+                            context: context,
+                            builder: (context) => SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.event_available, color: Colors.blue, semanticLabel: 'Schedule Trip'),
+                                    title: const Text('Schedule Trip', style: TextStyle(color: Colors.blue)),
+                                    onTap: () => Navigator.pop(context, 'schedule'),
+                                  ),
+                                  if (isWishlisted)
+                                    ListTile(
+                                      leading: const Icon(Icons.delete, color: Colors.red, semanticLabel: 'Remove from wishlist'),
+                                      title: const Text('Remove from wishlist', style: TextStyle(color: Colors.red)),
+                                      onTap: () => Navigator.pop(context, 'remove'),
+                                    ),
+                                  ListTile(
+                                    leading: const Icon(Icons.close, semanticLabel: 'Cancel'),
+                                    title: const Text('Cancel'),
+                                    onTap: () => Navigator.pop(context, null),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                          if (result == 'schedule') {
+                            widget.onScheduleTrip(place);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Trip scheduled for  [1m${place.name} [0m')),
+                              );
+                            }
+                          } else if (result == 'remove') {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Remove from Wishlist?'),
+                                content: Text('Are you sure you want to remove ${place.name} from your wishlist?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove', style: TextStyle(color: Colors.red))),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              widget.onWishlistChanged(place.name, false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${place.name} removed from wishlist')),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 4,
                           margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
+                          child: Stack(
+                            children: [
+                              ListTile(
                             contentPadding: const EdgeInsets.all(12),
                             leading: place.imageUrl.isNotEmpty
                                 ? ClipRRect(
@@ -211,7 +444,26 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
-                        )),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    widget.onWishlistChanged(place.name, !isWishlisted);
+                                  },
+                                  child: Icon(
+                                    isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                    color: isWishlisted ? Colors.red : Colors.white,
+                                    size: 28,
+                                    semanticLabel: isWishlisted ? 'Remove from wishlist' : 'Add to wishlist',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -222,13 +474,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
+    final isPopular = title == 'Popular Destinations';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: Theme.of(context).textTheme.headlineSmall),
-          TextButton(onPressed: () {}, child: Text('See All', style: TextStyle(color: Theme.of(context).colorScheme.tertiary))),
+          TextButton(
+            onPressed: isPopular
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AllDestinationsScreen(destinations: popularDestinations),
+                      ),
+                    );
+                  }
+                : () {},
+            child: Text('See All', style: TextStyle(color: Theme.of(context).colorScheme.tertiary)),
+          ),
         ],
       ),
     );

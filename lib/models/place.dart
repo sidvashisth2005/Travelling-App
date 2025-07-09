@@ -1,0 +1,1 @@
+export '../services/places_service.dart' show Place; 

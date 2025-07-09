@@ -12,6 +12,8 @@ This app lets users:
 - Get directions to any place or hotel using Google Maps
 - Register and log in securely with Firebase Auth
 - Chat with an AI assistant (Hugging Face Inference API)
+- **Manage wishlist, scheduled, and completed trips with full persistence and real-time sync**
+- **Edit your profile (name/photo) and see changes instantly**
 
 ---
 
@@ -24,6 +26,8 @@ This app lets users:
 - Search for cities and view top places/POIs (TripAdvisor API)
 - See popular Indian destinations
 - Modern, card-based UI with images and descriptions
+- **Add/remove places to your wishlist**
+- **Long-press to schedule a trip**
 
 ### 3. **Place Details**
 - Tap a place to view:
@@ -39,6 +43,8 @@ This app lets users:
 - Search for hotels in a city (TripAdvisor API, with OSM fallback)
 - See hotels on a map, with images and address
 - "Nearby Landmark" for hotels (via OSM)
+- **Filter hotels by price, room type, AC/Non AC, and star rating**
+- **Modern, uncluttered filter bar**
 
 ### 5. **AI Chatbot**
 - Chat with an AI assistant powered by Hugging Face Inference API
@@ -46,9 +52,44 @@ This app lets users:
 - Copy-to-clipboard: Long-press any chat message to copy
 - Robust error handling for API/network issues
 
-### 6. **Modern UI/UX**
+### 6. **Trips & Profile Management**
+- **Wishlist:** Add/remove places, persistent across devices
+- **Scheduled Trips:**
+  - Schedule a trip from Explore or Wishlist
+  - **Pick a date for your trip** (calendar icon)
+  - See scheduled date in red above the card
+  - Remove or mark as completed (with confirmation and undo)
+- **Completed Trips:**
+  - See all completed trips with completion date
+  - Remove from completed (with confirmation and undo)
+- **Profile:**
+  - View and edit your name, email, and photo
+  - Changes sync instantly with Firebase Auth and Firestore
+
+### 7. **Modern UI/UX**
 - Material 3, dark theme, purple primary color, rounded cards and buttons
-- Smooth transitions and consistent padding
+- Smooth transitions, ripple effects, and consistent padding
+- **Shimmer loading effects** while fetching data
+- **Empty state icons** for empty lists
+- **Ripple effects** on all interactive elements
+- **Themed SnackBars** with icons and undo actions
+- **Accessibility:** Semantic labels, color contrast, and keyboard navigation
+
+---
+
+## 🔥 Latest Features & UX Improvements
+- **Persistent wishlist, scheduled, and completed trips** (Firestore sync, real-time updates)
+- **Profile editing** (name/photo) with instant UI update
+- **Schedule trip with date picker:**
+  - Tap the calendar icon on a scheduled trip to pick/change the date
+  - Date is shown in red above the card
+- **Remove from wishlist/scheduled/completed** with confirmation dialog and undo option
+- **Congratulatory SnackBar** (random message) when you complete a trip
+- **All SnackBars are themed** (dark background, white text, icons, rounded corners)
+- **Sorting/filtering** for scheduled and completed trips (by name/date)
+- **Accessibility improvements:** Semantic labels, color contrast, ripple effects
+- **Shimmer loading** for all lists, **empty state icons** for empty lists
+- **Modern, responsive UI** with ripple feedback on all interactive elements
 
 ---
 
@@ -123,6 +164,7 @@ lib/
 - [http](https://pub.dev/packages/http)
 - [firebase_core](https://pub.dev/packages/firebase_core), [firebase_auth](https://pub.dev/packages/firebase_auth)
 - [cloud_firestore](https://pub.dev/packages/cloud_firestore)
+- [shimmer](https://pub.dev/packages/shimmer)
 
 ---
 

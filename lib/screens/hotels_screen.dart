@@ -21,6 +21,15 @@ class _HotelsScreenState extends State<HotelsScreen> {
   List<Hotel> _hotels = [];
   String? _detectedArea;
 
+  // Filter state
+  RangeValues _priceRange = const RangeValues(0, 10000);
+  String _roomType = 'Any';
+  String _acType = 'Any';
+  double _minRating = 0;
+
+  List<String> roomTypes = ['Any', 'Single', 'Double', 'Hall'];
+  List<String> acTypes = ['Any', 'AC', 'Non AC'];
+
   Future<void> _searchHotels() async {
     setState(() {
       _isLoading = true;
@@ -176,6 +185,18 @@ class _HotelsScreenState extends State<HotelsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hotelsWithCoords = _hotels.where((h) => h.latitude != null && h.longitude != null).toList();
+    // Apply filters
+    final filteredHotels = _hotels.where((hotel) {
+      // Price filter (assume price is a string like '₹1234' or 'N/A')
+      double price = 0;
+      final priceMatch = RegExp(r'(\d+)').firstMatch(hotel.price);
+      if (priceMatch != null) price = double.tryParse(priceMatch.group(1)!) ?? 0;
+      final inPrice = price >= _priceRange.start && price <= _priceRange.end || hotel.price == 'N/A';
+      final inRoom = _roomType == 'Any' || hotel.name.toLowerCase().contains(_roomType.toLowerCase());
+      final inAC = _acType == 'Any' || hotel.name.toLowerCase().contains(_acType.toLowerCase());
+      final inRating = hotel.rating >= _minRating;
+      return inPrice && inRoom && inAC && inRating;
+    }).toList();
     return Scaffold(
       appBar: AppBar(title: const Text('Hotels'), centerTitle: true),
       body: ListView(
@@ -221,7 +242,95 @@ class _HotelsScreenState extends State<HotelsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+          // Filters bar
+          Card(
+            color: theme.cardColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.filter_alt, color: Colors.deepPurpleAccent),
+                      const SizedBox(width: 8),
+                      Text('Filters', style: theme.textTheme.titleMedium),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Price Range
+                  const Text('Price Range'),
+                  RangeSlider(
+                    values: _priceRange,
+                    min: 0,
+                    max: 10000,
+                    divisions: 20,
+                    labels: RangeLabels('₹${_priceRange.start.toInt()}', '₹${_priceRange.end.toInt()}'),
+                    onChanged: (v) => setState(() => _priceRange = v),
+                  ),
+                  const SizedBox(height: 20),
+                  // Room Type and AC/Non AC
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Room Type'),
+                            DropdownButton<String>(
+                              value: _roomType,
+                              isExpanded: true,
+                              items: roomTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                              onChanged: (v) => setState(() => _roomType = v!),
+                              hint: const Text('Room Type'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('AC/Non AC'),
+                            DropdownButton<String>(
+                              value: _acType,
+                              isExpanded: true,
+                              items: acTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                              onChanged: (v) => setState(() => _acType = v!),
+                              hint: const Text('AC/Non AC'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Min Rating
+                  Row(
+                    children: [
+                      const Text('Min. Rating:'),
+                      Expanded(
+                        child: Slider(
+                          value: _minRating,
+                          min: 0,
+                          max: 5,
+                          divisions: 5,
+                          label: _minRating.toStringAsFixed(1),
+                          onChanged: (v) => setState(() => _minRating = v),
+                        ),
+                      ),
+                      Text(_minRating > 0 ? _minRating.toStringAsFixed(1) : 'Any'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (_isLoading)
             const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
@@ -229,7 +338,7 @@ class _HotelsScreenState extends State<HotelsScreen> {
               padding: const EdgeInsets.all(16),
               child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 16)),
             ),
-          if (hotelsWithCoords.isNotEmpty)
+          if (filteredHotels.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
               child: ClipRRect(
@@ -239,8 +348,8 @@ class _HotelsScreenState extends State<HotelsScreen> {
                   child: FlutterMap(
                     options: MapOptions(
                       initialCenter: LatLng(
-                        hotelsWithCoords.first.latitude!,
-                        hotelsWithCoords.first.longitude!,
+                        filteredHotels.first.latitude!,
+                        filteredHotels.first.longitude!,
                       ),
                       initialZoom: 13.0,
                       interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
@@ -252,7 +361,7 @@ class _HotelsScreenState extends State<HotelsScreen> {
                         userAgentPackageName: 'com.example.travel_app',
                       ),
                       MarkerLayer(
-                        markers: hotelsWithCoords.map((hotel) => Marker(
+                        markers: filteredHotels.map((hotel) => Marker(
                           width: 48,
                           height: 48,
                           point: LatLng(hotel.latitude!, hotel.longitude!),
@@ -264,8 +373,8 @@ class _HotelsScreenState extends State<HotelsScreen> {
                 ),
               ),
             ),
-          if (_hotels.isNotEmpty)
-            ..._hotels.map((hotel) => Card(
+          if (filteredHotels.isNotEmpty)
+            ...filteredHotels.map((hotel) => Card(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 4,
                   margin: const EdgeInsets.symmetric(vertical: 10),
