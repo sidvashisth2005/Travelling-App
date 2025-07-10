@@ -16,8 +16,6 @@ class UserTripsService {
     };
   }
 
-  
-
   static Future<void> setUserTrips(String uid, {
     List<Map<String, dynamic>>? wishlist,
     List<Map<String, dynamic>>? scheduled,
